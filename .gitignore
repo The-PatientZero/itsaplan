@@ -44,3 +44,10 @@ coverage
 
 # agent scratch space (test docs, drafts)
 .workspace/
+
+# local-agent-setup: personal/machine-local agent overrides (gitignored)
+AGENTS.override.md
+/.agents
+/.claude
+/.gemini
+/docs/planning
