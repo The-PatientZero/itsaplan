@@ -7,15 +7,18 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { passkey } from '@better-auth/passkey';
 import { apiKey } from '@better-auth/api-key';
 import { mcp, openAPI, magicLink, username, genericOAuth } from 'better-auth/plugins';
-import type { GenericOAuthConfig } from 'better-auth/plugins/generic-oauth';
+import { microsoftEntraId, type GenericOAuthConfig } from 'better-auth/plugins/generic-oauth';
 import * as schema from '@repo/db/schema';
 import {
   getAuthSettings,
   hasPendingInvite,
+  emailDomain,
   getGoogleConfig,
   isGoogleUsable,
   getOidcConfig,
   isOidcUsable,
+  getMicrosoftConfig,
+  isMicrosoftUsable,
 } from './instance';
 import { sendAuthEmail } from './mail';
 
@@ -137,6 +140,35 @@ async function refreshOidcOptions(): Promise<boolean> {
   }
 }
 
+// Microsoft 365 sign-in, the second entry of the same generic OAuth config array. The
+// preset derives the tenant-scoped endpoints from the stored tenant id, so the refresh
+// rebuilds it and copies its fields onto this one object, which the plugin holds by
+// reference; the id stays the constant the `account` rows store.
+export const MICROSOFT_PROVIDER_ID = 'microsoft';
+
+function microsoftPreset(config: {
+  tenantId: string;
+  clientId: string;
+  clientSecret: string;
+}): GenericOAuthConfig {
+  return { ...microsoftEntraId({ ...config, pkce: true }), providerId: MICROSOFT_PROVIDER_ID };
+}
+
+const microsoftOptions = microsoftPreset({ tenantId: '', clientId: '', clientSecret: '' });
+
+export const MICROSOFT_REDIRECT_URI = `${baseURL}/api/auth/oauth2/callback/${MICROSOFT_PROVIDER_ID}`;
+
+async function refreshMicrosoftOptions(): Promise<boolean> {
+  try {
+    const config = await getMicrosoftConfig();
+    Object.assign(microsoftOptions, microsoftPreset(config));
+    return isMicrosoftUsable(config);
+  } catch (error) {
+    console.error('[auth] could not read the Microsoft credentials:', error);
+    return false;
+  }
+}
+
 // The two conditions better-auth checks before linking an address to an account that
 // already has it are read from different places: `trustedProviders` per request,
 // through the resolver below, and `requireLocalEmailVerified` off the options object
@@ -150,7 +182,7 @@ let trustProviderEmails = false;
 async function resolveTrustedProviders(request?: Request): Promise<string[]> {
   if (!request || !new URL(request.url).pathname.includes('/callback/')) return [];
   trustProviderEmails = (await getAuthSettings()).trustProviderEmails;
-  return trustProviderEmails ? ['google', OIDC_PROVIDER_ID] : [];
+  return trustProviderEmails ? ['google', OIDC_PROVIDER_ID, MICROSOFT_PROVIDER_ID] : [];
 }
 
 // Whether a new account has to confirm its address before it gets a session. An
@@ -182,6 +214,13 @@ const PASSWORD_PATHS = new Set([
 // ?error= it redirects with; without one the callback would fail the request instead.
 async function assertRegistrationAllowed(email: string): Promise<void> {
   const settings = await getAuthSettings();
+  const domains = settings.allowedEmailDomains;
+  if (domains.length > 0 && !domains.includes(emailDomain(email))) {
+    throw new APIError('FORBIDDEN', {
+      code: 'EMAIL_DOMAIN_NOT_ALLOWED',
+      message: `Only an address at ${domains.join(', ')} can create an account here`,
+    });
+  }
   if (settings.registration === 'closed') {
     throw new APIError('FORBIDDEN', {
       code: 'REGISTRATION_CLOSED',
@@ -400,10 +439,25 @@ export const auth = betterAuth({
         return;
       }
 
-      // Both halves of the OIDC round trip. The refusal carries a code because the
-      // callback turns it into the ?error= it redirects with; without one the
-      // callback fails the request instead.
+      // Both halves of a generic OAuth round trip, for whichever of the two providers
+      // the request names. ctx.path is the route pattern, so the callback's provider is
+      // read from its params. The refusal carries a code because the callback turns it
+      // into the ?error= it redirects with; without one the callback fails the
+      // request instead.
       if (ctx.path === '/sign-in/oauth2' || ctx.path.startsWith('/oauth2/callback/')) {
+        const providerId =
+          ctx.path === '/sign-in/oauth2'
+            ? (ctx.body as { providerId?: string } | undefined)?.providerId
+            : (ctx.params as { providerId?: string } | undefined)?.providerId;
+        if (providerId === MICROSOFT_PROVIDER_ID) {
+          if (!(await refreshMicrosoftOptions())) {
+            throw new APIError('FORBIDDEN', {
+              code: 'MICROSOFT_DISABLED',
+              message: 'Microsoft sign-in is disabled on this instance',
+            });
+          }
+          return;
+        }
         if (!(await refreshOidcOptions())) {
           throw new APIError('FORBIDDEN', {
             code: 'OIDC_DISABLED',
@@ -563,7 +617,7 @@ export const auth = betterAuth({
     // then used to sign in (signIn.passkey). Adds the `passkey` table.
     passkey({
       rpID: passkeyRpID,
-      rpName: process.env.PASSKEY_RP_NAME ?? "It's a Plan",
+      rpName: process.env.PASSKEY_RP_NAME ?? 'Planning Tool',
       // Expected origin(s) of the WebAuthn ceremony — the frontend origins.
       origin: trustedOrigins,
     }),
@@ -612,12 +666,12 @@ export const auth = betterAuth({
         });
       },
     }),
-    // A single generic OIDC/OAuth2 provider, configured by the instance owner and
-    // discovered from its well-known document. Adds /sign-in/oauth2 and
+    // The generic OIDC/OAuth2 provider the instance owner points at a well-known
+    // document, and Microsoft 365 against one Entra tenant. Adds /sign-in/oauth2 and
     // /oauth2/callback/:providerId; it reuses the `account` table, so it adds none.
     // The config array is materialised at startup — see oidcOptions above for why
-    // there is exactly one entry and why its fields are mutated rather than replaced.
-    genericOAuth({ config: [oidcOptions] }),
+    // the entries are fixed and why their fields are mutated rather than replaced.
+    genericOAuth({ config: [oidcOptions, microsoftOptions] }),
     // Usernames: a second identifier next to the address, unique across the
     // instance. Adds `username` / `display_username` to the user table and the
     // /sign-in/username endpoint the sign-in screen uses when the visitor typed a
@@ -722,6 +776,10 @@ export {
   getOidcConfig,
   getOidcLabel,
   hasConfiguredOidc,
+  getMicrosoftSettings,
+  setMicrosoftSettings,
+  hasConfiguredMicrosoft,
+  normalizeEmailDomains,
   getScimSettings,
   setScimSettings,
   rotateScimToken,
@@ -739,6 +797,8 @@ export type {
   InstanceOidcDto,
   InstanceOidcPatch,
   InstanceOidcConfig,
+  InstanceMicrosoftDto,
+  InstanceMicrosoftPatch,
   InstanceScimDto,
 } from './instance';
 

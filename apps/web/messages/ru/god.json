@@ -2,6 +2,7 @@
   "providers": {
     "credential": "Пароль",
     "google": "Google",
+    "microsoft": "Microsoft",
     "passkey": "Passkey"
   },
   "users": {
@@ -165,6 +166,8 @@
     "saved": "Настройки аутентификации сохранены",
     "registration": "Регистрация",
     "registrationHint": "Кто может создать аккаунт в этом инстансе.",
+    "allowedDomains": "Разрешённые почтовые домены",
+    "allowedDomainsHint": "По одному домену в строке, например example.com. Если список не пуст, аккаунт создаётся только для адреса из этих доменов, каким бы способом он ни создавался. Оставьте пустым, чтобы разрешить любые домены.",
     "modes": {
       "open": {
         "label": "Открытая",
@@ -268,7 +271,13 @@
     "oidcLabelHint": "Называет вашего поставщика на кнопке входа. Оставьте пустым для общей надписи.",
     "scopes": "Scopes",
     "scopesHint": "Через пробел. openid обязателен; profile и email заполняют имя и адрес.",
-    "oidcRedirectUriHint": "Укажите этот адрес как redirect URI у клиента вашего поставщика удостоверений. При несовпадении поставщик отклонит вход."
+    "oidcRedirectUriHint": "Укажите этот адрес как redirect URI у клиента вашего поставщика удостоверений. При несовпадении поставщик отклонит вход.",
+    "microsoft": "Microsoft 365",
+    "microsoftConfigured": "Адрес без аккаунта получает новый; адрес с подтверждённым аккаунтом входит в него.",
+    "microsoftMissing": "Сначала добавьте tenant ID, client ID и секрет.",
+    "tenantId": "Tenant ID",
+    "tenantIdHint": "ID каталога (tenant) регистрации приложения в Microsoft Entra. Войти могут только аккаунты этого тенанта.",
+    "microsoftRedirectUriHint": "Зарегистрируйте это как Web redirect URI в регистрации приложения в Microsoft Entra. Microsoft отклонит вход, если значение не совпадёт точно."
   },
   "scim": {
     "saved": "Настройки SCIM сохранены",

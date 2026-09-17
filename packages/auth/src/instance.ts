@@ -23,13 +23,15 @@ import { hasEmailProvider, type SmtpConfig } from '@repo/mailer';
 //
 // Non-secret settings are one jsonb blob in app_setting under the 'auth' key; the
 // credentials are encrypted in app_secret under 'auth.email', 'auth.google',
-// 'auth.oidc' and 'auth.scim', each with a `redacted` mirror the settings UI can read
-// without decrypting. The mail config is also read by the api and the worker, so its
-// shape and reader live in @repo/db; what stays here is the write side.
+// 'auth.oidc', 'auth.microsoft' and 'auth.scim', each with a `redacted` mirror the
+// settings UI can read without decrypting. The mail config is also read by the api and
+// the worker, so its shape and reader live in @repo/db; what stays here is the write
+// side.
 
 const AUTH_SETTING_KEY = 'auth';
 const GOOGLE_SECRET_KEY = 'auth.google';
 const OIDC_SECRET_KEY = 'auth.oidc';
+const MICROSOFT_SECRET_KEY = 'auth.microsoft';
 const SCIM_SECRET_KEY = 'auth.scim';
 
 // Who may create an account.
@@ -57,6 +59,9 @@ export interface AuthSettings {
   // been registered with a password by someone other than the owner of the address,
   // and trusting the provider hands it to whoever the provider says owns it.
   trustProviderEmails: boolean;
+  // Domains an address has to belong to before an account is created for it, whichever
+  // sign-in method creates it. Empty admits every domain. Lower-case, without '@'.
+  allowedEmailDomains: string[];
 }
 
 function defaultAuthSettings(): AuthSettings {
@@ -66,6 +71,7 @@ function defaultAuthSettings(): AuthSettings {
     magicLink: false,
     emailPassword: true,
     trustProviderEmails: false,
+    allowedEmailDomains: [],
   };
 }
 
@@ -79,6 +85,31 @@ export async function setAuthSettings(patch: Partial<AuthSettings>): Promise<Aut
   const next = { ...(await getAuthSettings()), ...patch };
   await setSetting(AUTH_SETTING_KEY, next);
   return next;
+}
+
+const DOMAIN_LABEL = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+
+// Null when an entry is not a hostname of at least two labels.
+export function normalizeEmailDomains(domains: string[]): string[] | null {
+  const normalized = new Set<string>();
+  for (const entry of domains) {
+    const domain = entry.trim().toLowerCase().replace(/^@/, '');
+    if (!domain) continue;
+    const labels = domain.split('.');
+    if (labels.length < 2 || !labels.every((label) => DOMAIN_LABEL.test(label))) return null;
+    normalized.add(domain);
+  }
+  return [...normalized];
+}
+
+export function emailDomain(email: string): string {
+  const at = email.lastIndexOf('@');
+  return at < 0
+    ? ''
+    : email
+        .slice(at + 1)
+        .trim()
+        .toLowerCase();
 }
 
 // ── Encrypted config storage ──────────────────────────────────────────────────
@@ -362,6 +393,85 @@ export async function setOidcSettings(patch: InstanceOidcPatch): Promise<Instanc
   };
   const redacted = toOidcDto(next);
   await writeSecret(OIDC_SECRET_KEY, next, redacted);
+  return redacted;
+}
+
+// ── Microsoft Entra ID ────────────────────────────────────────────────────────
+
+// Microsoft 365 sign-in against one Entra tenant. The stored, decrypted credentials;
+// read by the provider in ./index.ts on every request, never returned over HTTP.
+export interface InstanceMicrosoftConfig {
+  enabled: boolean;
+  tenantId: string;
+  clientId: string;
+  clientSecret: string;
+}
+
+export interface InstanceMicrosoftDto {
+  enabled: boolean;
+  tenantId: string;
+  clientId: string;
+  hasClientSecret: boolean;
+}
+
+// The secret keeps its stored value when omitted or sent empty (a masked field the
+// user did not edit).
+export interface InstanceMicrosoftPatch {
+  enabled?: boolean;
+  tenantId?: string;
+  clientId?: string;
+  clientSecret?: string;
+}
+
+function defaultMicrosoftConfig(): InstanceMicrosoftConfig {
+  return { enabled: false, tenantId: '', clientId: '', clientSecret: '' };
+}
+
+function toMicrosoftDto(config: InstanceMicrosoftConfig): InstanceMicrosoftDto {
+  return {
+    enabled: config.enabled,
+    tenantId: config.tenantId,
+    clientId: config.clientId,
+    hasClientSecret: config.clientSecret.length > 0,
+  };
+}
+
+export async function getMicrosoftConfig(): Promise<InstanceMicrosoftConfig> {
+  const stored = await readSecret<InstanceMicrosoftConfig>(MICROSOFT_SECRET_KEY);
+  return { ...defaultMicrosoftConfig(), ...(stored ?? {}) };
+}
+
+export async function getMicrosoftSettings(): Promise<InstanceMicrosoftDto> {
+  return toMicrosoftDto(await getMicrosoftConfig());
+}
+
+// The provider is always mounted; this is what the god settings and the public sign-in
+// screen ask before offering it.
+export function isMicrosoftUsable(config: InstanceMicrosoftConfig): boolean {
+  return (
+    config.enabled &&
+    config.tenantId.length > 0 &&
+    config.clientId.length > 0 &&
+    config.clientSecret.length > 0
+  );
+}
+
+export async function hasConfiguredMicrosoft(): Promise<boolean> {
+  return isMicrosoftUsable(await getMicrosoftConfig());
+}
+
+export async function setMicrosoftSettings(
+  patch: InstanceMicrosoftPatch,
+): Promise<InstanceMicrosoftDto> {
+  const current = await getMicrosoftConfig();
+  const next: InstanceMicrosoftConfig = {
+    enabled: patch.enabled ?? current.enabled,
+    tenantId: patch.tenantId ?? current.tenantId,
+    clientId: patch.clientId ?? current.clientId,
+    clientSecret: mergeSecret(current.clientSecret, patch.clientSecret),
+  };
+  const redacted = toMicrosoftDto(next);
+  await writeSecret(MICROSOFT_SECRET_KEY, next, redacted);
   return redacted;
 }
 

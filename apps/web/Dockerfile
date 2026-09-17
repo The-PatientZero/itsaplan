@@ -50,5 +50,12 @@ COPY --from=build /app/apps/web/.next/standalone ./
 COPY --from=build /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=build /app/apps/web/public ./apps/web/public
 
+# Runs as a non-root user on a filesystem that may be read-only. The only paths it
+# writes are /tmp and /app/apps/web/.next/cache (the next/image cache).
+RUN mkdir -p apps/web/.next/cache && chown node:node apps/web/.next/cache
+USER node
+
 EXPOSE 3001
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=5 \
+  CMD wget -q -O /dev/null http://127.0.0.1:3001/health/live || exit 1
 CMD ["node", "apps/web/server.js"]

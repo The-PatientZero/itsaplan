@@ -2,6 +2,7 @@
   "providers": {
     "credential": "Senha",
     "google": "Google",
+    "microsoft": "Microsoft",
     "passkey": "Chave de acesso"
   },
   "users": {
@@ -165,6 +166,8 @@
     "saved": "Configurações de autenticação salvas",
     "registration": "Registro",
     "registrationHint": "Quem pode criar uma conta nesta instância.",
+    "allowedDomains": "Domínios de e-mail permitidos",
+    "allowedDomainsHint": "Um domínio por linha, como example.com. Com algum listado, uma conta só é criada para um endereço em um deles, seja qual for o método de login. Deixe vazio para permitir qualquer domínio.",
     "modes": {
       "open": {
         "label": "Aberto",
@@ -268,7 +271,13 @@
     "oidcLabelHint": "Nomeia seu provedor no botão de login. Deixe vazio para um rótulo genérico.",
     "scopes": "Escopos",
     "scopesHint": "Separados por espaços. openid é obrigatório; profile e email preenchem o nome e o endereço.",
-    "oidcRedirectUriHint": "Registre isto como um URI de redirecionamento no cliente no seu provedor de identidade. O provedor recusa o login se não corresponder exatamente."
+    "oidcRedirectUriHint": "Registre isto como um URI de redirecionamento no cliente no seu provedor de identidade. O provedor recusa o login se não corresponder exatamente.",
+    "microsoft": "Microsoft 365",
+    "microsoftConfigured": "Um endereço sem conta ganha uma; um endereço que já tem uma conta confirmada entra nela.",
+    "microsoftMissing": "Adicione o ID do locatário, o ID do cliente e o segredo primeiro.",
+    "tenantId": "ID do locatário",
+    "tenantIdHint": "O ID do diretório (locatário) do registro de aplicativo no Microsoft Entra. Só contas desse locatário podem entrar.",
+    "microsoftRedirectUriHint": "Registre isto como URI de redirecionamento Web no registro de aplicativo no Microsoft Entra. A Microsoft recusa o login se não corresponder exatamente."
   },
   "scim": {
     "saved": "Configurações SCIM salvas",

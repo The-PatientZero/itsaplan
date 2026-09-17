@@ -1,0 +1,93 @@
+{
+  "$schema": "https://local-agent-setup/local-agent.schema.json",
+  "version": 2,
+
+  "_comment_defaultMode": "auto routes clear implementation to Work Items and unsettled planning to /forge-plan. [fast] is reserved for trivial inline changes.",
+  "defaultMode": "auto",
+
+  "_comment_paths": "Planning docs are user-owned. Install creates missing scaffolding and never overwrites planning history.",
+  "paths": {
+    "planning": "docs/planning",
+    "vision": "docs/planning/VISION.md",
+    "roadmap": "docs/planning/ROADMAP.md",
+    "milestones": "docs/planning/roadmap",
+    "backlog": "docs/planning/BACKLOG.md",
+    "workItems": "docs/planning/work-items",
+    "audits": "docs/planning/audits",
+    "openGaps": "docs/planning/OPEN-GAPS.md",
+    "decisions": "docs/planning/DECISIONS.md",
+    "discussions": "docs/planning/discussions",
+    "research": "docs/planning/research",
+    "legacyArchive": "docs/planning/archive/legacy"
+  },
+
+  "_comment_planRequired": "Signals that require functional and technical shaping before unplanned implementation.",
+  "planRequired": {
+    "keywords": [
+      "auth",
+      "authorization",
+      "permission",
+      "tenant",
+      "billing",
+      "payment",
+      "migration",
+      "PII",
+      "secret",
+      "credential",
+      "destructive",
+      "schema change",
+      "public API",
+      "rollout",
+      "compatibility",
+      "architectural",
+      "cross-repo",
+      "multi-session"
+    ],
+    "pathGlobs": [
+      "auth/**",
+      "billing/**",
+      "migrations/**",
+      "src/tenant/**",
+      "**/payments/**",
+      "**/identity/**",
+      "**/schema/**",
+      ".github/workflows/**"
+    ]
+  },
+
+  "_comment_workItems": "Every WI-NNNN has a standalone document and a Backlog row.",
+  "workItems": {
+    "statuses": [
+      "PROPOSED",
+      "PLANNED",
+      "IN-PROGRESS",
+      "BLOCKED",
+      "PARTIAL",
+      "DONE",
+      "ABANDONED",
+      "SUPERSEDED"
+    ],
+    "keepCompletedInBacklog": true
+  },
+
+  "_comment_audits": "Audits are immutable dated evidence inputs; findings require explicit promotion.",
+  "audits": {
+    "directoryDateFormat": "YYYY-MM-DD",
+    "filenamePattern": "<audit-type>-NN.md",
+    "autoPromoteFindings": false
+  },
+
+  "_comment_freshness": "Thresholds for read-only freshness reporting in days.",
+  "freshness": {
+    "workItemDays": 30,
+    "openGapsDays": 14,
+    "milestoneDays": 60,
+    "auditCandidateDays": 90
+  },
+
+  "ranking": {
+    "clampScoreAt": 10,
+    "minimumEffortClamp": 2,
+    "manualOverrideStaleDays": 30
+  }
+}

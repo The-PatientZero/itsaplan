@@ -5,17 +5,19 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import GoogleIcon from '@/components/common/GoogleIcon';
+import MicrosoftIcon from '@/components/common/MicrosoftIcon';
 import { useAuthConfig } from '@/services/authConfig.service';
 
 // The sign-in methods that are not the email + password form: the magic link toggle,
-// the instance's own OIDC provider, Google, and passkeys. Which of the first three
-// show depends on the instance config.
+// the instance's own OIDC provider, Google, Microsoft, and passkeys. Which of the
+// first four show depends on the instance config.
 export default function AuthLoginAlternatives({
   signingInWithLink,
   pending,
   onToggleMethod,
   onOidc,
   onGoogle,
+  onMicrosoft,
   onPasskey,
 }: {
   signingInWithLink: boolean;
@@ -23,6 +25,7 @@ export default function AuthLoginAlternatives({
   onToggleMethod: () => void;
   onOidc: () => void;
   onGoogle: () => void;
+  onMicrosoft: () => void;
   onPasskey: () => void;
 }) {
   const t = useTranslations('auth.login');
@@ -54,6 +57,12 @@ export default function AuthLoginAlternatives({
         <Button type="button" variant="outline" onClick={onGoogle} disabled={pending}>
           <GoogleIcon className="size-4" />
           {t('withGoogle')}
+        </Button>
+      )}
+      {authConfig?.microsoft && (
+        <Button type="button" variant="outline" onClick={onMicrosoft} disabled={pending}>
+          <MicrosoftIcon className="size-4" />
+          {t('withMicrosoft')}
         </Button>
       )}
       <Button type="button" variant="outline" onClick={onPasskey} disabled={pending}>

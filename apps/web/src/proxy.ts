@@ -16,7 +16,15 @@ const PUBLIC_PATHS = ['/login', '/register'];
 // a session — a share page opened by a logged-out visitor shows them too.
 // `/protected-media` is intentionally absent: document assets carry private project
 // content and must pass this session gate before their route forwards the cookie.
-const OPEN_PATHS = ['/invite', '/forgot-password', '/reset-password', '/share', '/media'];
+// `/health` answers the platform's probes, which carry no cookie.
+const OPEN_PATHS = [
+  '/invite',
+  '/forgot-password',
+  '/reset-password',
+  '/share',
+  '/media',
+  '/health',
+];
 
 // Routes that stream bytes from the api and pass its headers through, including the
 // sandbox policy it puts on a download. The document policy is for html only, and set

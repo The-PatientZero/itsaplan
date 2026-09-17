@@ -35,14 +35,26 @@ RUN bun install --frozen-lockfile $INSTALL_FILTER $INSTALL_FLAGS
 # clobber the copied dependencies.
 FROM base AS release
 ENV NODE_ENV=production
-# pg_dump, for the backup migrate.ts takes before it applies anything. The package
-# tracks the Postgres the compose file runs (17), and a client older than the server
-# refuses to dump, so an instance on a newer server needs a newer image or
-# SKIP_PRE_MIGRATION_BACKUP=1.
-RUN apk add --no-cache postgresql-client
+# pg_dump, for the backup migrate.ts takes before it applies anything. A client older
+# than the server refuses to dump, so the PostgreSQL 18 client comes from the next
+# Alpine branch; it dumps the 17 the compose file runs as well.
+RUN apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/v3.23/main postgresql18-client \
+  && mkdir /backups && chown bun:bun /backups
 COPY --from=install /app ./
 COPY . .
 
+# Runs as a non-root user on a filesystem that may be read-only. The only paths it
+# writes are /tmp and /backups (the pre-migration dump, or SKIP_PRE_MIGRATION_BACKUP=1).
+# A backups volume created by an earlier root image stays root-owned and needs a
+# one-time `chown 1000` before this image can dump into it. The transpiler cache would
+# write under $HOME, so it is off.
+ENV BUN_RUNTIME_TRANSPILER_CACHE_PATH=0
+USER bun
+
 EXPOSE 3000
-# Apply migrations before starting the server.
+HEALTHCHECK --interval=15s --timeout=5s --start-period=180s --retries=5 \
+  CMD wget -q -O /dev/null http://127.0.0.1:3000/health/live || exit 1
+# Apply migrations before starting the server. A platform that runs migrations as a
+# separate step starts the server alone with `bun run apps/api/src/index.ts` and runs
+# `bun run packages/db/src/migrate.ts` from the same image.
 CMD ["sh", "-c", "bun run packages/db/src/migrate.ts && bun run apps/api/src/index.ts"]

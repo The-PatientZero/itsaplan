@@ -2,6 +2,7 @@
   "providers": {
     "credential": "Password",
     "google": "Google",
+    "microsoft": "Microsoft",
     "passkey": "Passkey"
   },
   "users": {
@@ -165,6 +166,8 @@
     "saved": "Authentication settings saved",
     "registration": "Registration",
     "registrationHint": "Who may create an account on this instance.",
+    "allowedDomains": "Allowed email domains",
+    "allowedDomainsHint": "One domain per line, such as example.com. With any listed, an account is created only for an address in one of them, whichever sign-in method makes it. Leave empty to allow every domain.",
     "modes": {
       "open": {
         "label": "Open",
@@ -268,7 +271,13 @@
     "oidcLabelHint": "Names your provider on the sign-in button. Leave it empty for a generic label.",
     "scopes": "Scopes",
     "scopesHint": "Separated by spaces. openid is required; profile and email fill in the name and address.",
-    "oidcRedirectUriHint": "Register this as a redirect URI on the client at your identity provider. The provider refuses the sign-in if it does not match exactly."
+    "oidcRedirectUriHint": "Register this as a redirect URI on the client at your identity provider. The provider refuses the sign-in if it does not match exactly.",
+    "microsoft": "Microsoft 365",
+    "microsoftConfigured": "An address without an account gets one; an address that already has a confirmed account signs into it.",
+    "microsoftMissing": "Add the tenant ID, client ID and secret first.",
+    "tenantId": "Tenant ID",
+    "tenantIdHint": "The directory (tenant) ID of the app registration in Microsoft Entra. Only accounts of that tenant can sign in.",
+    "microsoftRedirectUriHint": "Register this as a Web redirect URI on the app registration in Microsoft Entra. Microsoft refuses the sign-in if it does not match exactly."
   },
   "scim": {
     "saved": "SCIM settings saved",

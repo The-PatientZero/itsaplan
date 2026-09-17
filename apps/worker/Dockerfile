@@ -33,6 +33,11 @@ ENV NODE_ENV=production
 COPY --from=install /app ./
 COPY . .
 
+# Runs as a non-root user on a filesystem that may be read-only; /tmp is the only path
+# it writes. The transpiler cache would write under $HOME, so it is off.
+ENV BUN_RUNTIME_TRANSPILER_CACHE_PATH=0
+USER bun
+
 # The api applies migrations on startup; the worker only reads/writes existing
 # tables. It polls the delivery queue, so it tolerates the tables not existing yet
 # (a tick logs the error and retries on the next interval).

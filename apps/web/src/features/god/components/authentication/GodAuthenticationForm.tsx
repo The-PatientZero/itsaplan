@@ -8,6 +8,7 @@ import SettingsSection from '@/components/common/page/SettingsSection';
 import SettingsRow from '@/components/common/page/SettingsRow';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import GodSectionPage from '../GodSectionPage';
 import RegistrationModePicker from './RegistrationModePicker';
 import { useGodPolicyForm } from '../../hooks/useGodPolicyForm';
@@ -55,6 +56,19 @@ export default function GodAuthenticationForm({
               value={policy.registration}
               disabled={policy.saving}
               onChange={policy.setRegistration}
+            />
+          </SettingsCard>
+        </SettingsSection>
+
+        <SettingsSection title={t('allowedDomains')} description={t('allowedDomainsHint')}>
+          <SettingsCard className="p-4">
+            <Textarea
+              aria-label={t('allowedDomains')}
+              value={policy.allowedEmailDomains}
+              onChange={(e) => policy.setAllowedEmailDomains(e.target.value)}
+              placeholder="example.com"
+              rows={3}
+              disabled={policy.saving}
             />
           </SettingsCard>
         </SettingsSection>

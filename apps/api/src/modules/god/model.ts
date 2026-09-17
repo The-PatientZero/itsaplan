@@ -37,6 +37,7 @@ export const AuthSettingsResponse = t.Object({
   magicLink: t.Boolean(),
   emailPassword: t.Boolean(),
   trustProviderEmails: t.Boolean(),
+  allowedEmailDomains: t.Array(t.String()),
   // The settings that depend on outbound email cannot be turned on without a mail
   // provider, and the UI explains why.
   hasEmailProvider: t.Boolean(),
@@ -51,6 +52,7 @@ export const AuthSettingsBody = t.Object({
   magicLink: t.Optional(t.Boolean()),
   emailPassword: t.Optional(t.Boolean()),
   trustProviderEmails: t.Optional(t.Boolean()),
+  allowedEmailDomains: t.Optional(t.Array(t.String({ maxLength: 253 }), { maxItems: 50 })),
 });
 
 export const EmailSettingsResponse = t.Object({
@@ -125,6 +127,28 @@ export const OidcSettingsBody = t.Object({
   clientSecret: t.Optional(t.String({ maxLength: 512 })),
   scopes: t.Optional(t.Array(t.String({ minLength: 1, maxLength: 64 }), { maxItems: 32 })),
   pkce: t.Optional(t.Boolean()),
+});
+
+export const MicrosoftSettingsResponse = t.Object({
+  enabled: t.Boolean(),
+  tenantId: t.String(),
+  clientId: t.String(),
+  hasClientSecret: t.Boolean(),
+  // The value to register on the Entra app registration. Derived from the API
+  // origin, so the UI shows it rather than asking the owner to assemble it.
+  redirectUri: t.String(),
+});
+
+export const MicrosoftSettingsBody = t.Object({
+  enabled: t.Optional(t.Boolean()),
+  // The directory id only: `common` and `organizations` would admit every tenant.
+  tenantId: t.Optional(
+    t.String({
+      pattern: '^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})?$',
+    }),
+  ),
+  clientId: t.Optional(t.String({ maxLength: 512 })),
+  clientSecret: t.Optional(t.String({ maxLength: 512 })),
 });
 
 export const ScimSettingsResponse = t.Object({

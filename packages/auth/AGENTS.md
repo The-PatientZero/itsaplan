@@ -26,10 +26,20 @@ change them without a restart. Read them
 through this module — never inline a query on `app_setting` / `app_secret` elsewhere.
 
 - `app_setting` key `auth` → `{ registration, requireEmailVerification, magicLink,
-  emailPassword }`.
-- `app_secret` keys `auth.email`, `auth.google`, `auth.oidc` and `auth.scim` → the mail
-  provider, the two OAuth providers and the SCIM token, encrypted with `@repo/crypto`,
-  each with a `redacted` mirror for the settings UI. Secrets never leave the server.
+  emailPassword, trustProviderEmails, allowedEmailDomains }`.
+- `app_secret` keys `auth.email`, `auth.google`, `auth.oidc`, `auth.microsoft` and
+  `auth.scim` → the mail provider, the three OAuth providers and the SCIM token,
+  encrypted with `@repo/crypto`, each with a `redacted` mirror for the settings UI.
+  Secrets never leave the server.
+
+`allowedEmailDomains` is the organization's gate on who may create an account: with
+any domain listed, `assertRegistrationAllowed` refuses every creation whose address is
+outside the list with the code `EMAIL_DOMAIN_NOT_ALLOWED`, before the registration mode
+is checked. It runs in `databaseHooks.user.create.before`, so it covers the password
+form, the magic link and every OAuth provider at once; SCIM and agent bot users are
+direct inserts and are not gated. The match is exact and case-insensitive on the domain
+part (`sub.example.com` is not `example.com`). The api normalizes the list with
+`normalizeEmailDomains` before storing it.
 
 The mail provider is read by the api and the worker as well, so its shape and reader
 live in `@repo/db` (`domains/instance-email.ts`); what is here is the write side god
@@ -93,19 +103,29 @@ what was typed contains an "@". The instance verification gate in `hooks.before`
 covers `/sign-in/username` as well as `/sign-in/email`, and runs before the plugin's
 own check of `emailAndPassword.requireEmailVerification`.
 
-## Generic OIDC
+## Generic OIDC and Microsoft
 
-`genericOAuth({ config: [oidcOptions] })` adds one OIDC/OAuth2 provider, discovered from
-the well-known document the operator points it at (`app_secret` key `auth.oidc`). It adds
-`/sign-in/oauth2` and `/oauth2/callback/:providerId`, and reuses the `account` table, so it
-adds none of its own.
+`genericOAuth({ config: [oidcOptions, microsoftOptions] })` adds two providers: one
+OIDC/OAuth2 provider discovered from the well-known document the operator points it at
+(`app_secret` key `auth.oidc`), and Microsoft 365 against one Entra tenant, built from
+better-auth's `microsoftEntraId` preset (`app_secret` key `auth.microsoft`). The plugin
+adds `/sign-in/oauth2` and `/oauth2/callback/:providerId`, and reuses the `account`
+table, so it adds none of its own.
 
-`providerId` is the constant `OIDC_PROVIDER_ID` (`"oidc"`): it is what the `account` rows
-store, and better-auth materialises the provider list once at startup, so the config array
-can neither grow nor be re-keyed afterwards. That is also why there is exactly one
-provider. `oidcOptions` is refreshed per request by `refreshOidcOptions()` in
-`hooks.before` — the same by-reference rule as `googleOptions`: assign its fields, never
-replace the object.
+The ids are the constants `OIDC_PROVIDER_ID` (`"oidc"`) and `MICROSOFT_PROVIDER_ID`
+(`"microsoft"`): they are what the `account` rows store, and better-auth materialises the
+provider list once at startup, so the config array can neither grow nor be re-keyed
+afterwards. `hooks.before` reads which provider a request names (the body of
+`/sign-in/oauth2`, the path of the callback) and refreshes that one —
+`refreshOidcOptions()` or `refreshMicrosoftOptions()` — refusing with `OIDC_DISABLED` or
+`MICROSOFT_DISABLED` when it is not usable. Both follow the by-reference rule of
+`googleOptions`: assign the fields, never replace the object. The Microsoft refresh
+rebuilds the preset from the stored tenant id, because the authorization and token URLs
+are derived from it.
+
+The Entra preset reports `emailVerified: false` (Microsoft sends no `email_verified`
+claim), so an instance that wants a Microsoft sign-in to land in an existing account
+turns `trustProviderEmails` on.
 
 `/oauth2/link` is in `disabledPaths`. No screen offers linking an OIDC identity to the
 signed-in account, and better-auth already attaches a sign-in to a matching confirmed
@@ -121,8 +141,8 @@ an account that already exists.
 
 Like every other instance setting this is read per request, so it cannot be
 `emailAndPassword.enabled: false` (evaluated at startup) and cannot live in `disabledPaths`
-(a static array). The api refuses to turn it off while neither Google nor OIDC is usable,
-which is what stops an instance being left with no way in.
+(a static array). The api refuses to turn it off while neither Google, OIDC nor Microsoft is
+usable, which is what stops an instance being left with no way in.
 
 ## Deactivation and SCIM
 

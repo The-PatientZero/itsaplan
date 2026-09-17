@@ -1,6 +1,7 @@
 import { Elysia, t } from 'elysia';
 import {
   GOOGLE_REDIRECT_URI,
+  MICROSOFT_REDIRECT_URI,
   OIDC_REDIRECT_URI,
   getAuthSettings,
   setAuthSettings,
@@ -13,12 +14,17 @@ import {
   getOidcSettings,
   setOidcSettings,
   hasConfiguredOidc,
+  getMicrosoftSettings,
+  setMicrosoftSettings,
+  hasConfiguredMicrosoft,
+  normalizeEmailDomains,
   getScimSettings,
   setScimSettings,
   rotateScimToken,
 } from '@repo/auth';
 import { hasConfiguredEmailProvider } from '@repo/db';
 import { emailBody, hasEmailProvider, sendEmail } from '@repo/mailer';
+import { APP_NAME } from '#shared/app';
 import { authContext } from '#shared/auth-context';
 import { requireGod } from '#shared/access';
 import { HttpError } from '#shared/lib';
@@ -58,6 +64,8 @@ import {
   InstanceTeamResponse,
   InstanceUserDetailResponse,
   InstanceUserPageResponse,
+  MicrosoftSettingsBody,
+  MicrosoftSettingsResponse,
   OidcSettingsBody,
   OidcSettingsResponse,
   ScimGroupMappingsBody,
@@ -108,7 +116,9 @@ import {
 // Whether any single sign-on provider can run right now. Password sign-in may only
 // be turned off while one can.
 async function hasSsoProvider(): Promise<boolean> {
-  return (await hasConfiguredOidc()) || (await hasConfiguredGoogle());
+  return (
+    (await hasConfiguredOidc()) || (await hasConfiguredGoogle()) || (await hasConfiguredMicrosoft())
+  );
 }
 
 async function assertUsableSignInMethod(
@@ -160,7 +170,18 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
       if (body.emailPassword === false && !sso) {
         throw new HttpError(400, 'Configure a single sign-on provider first');
       }
-      const next = await setAuthSettings(body);
+      const patch = { ...body };
+      if (body.allowedEmailDomains) {
+        const domains = normalizeEmailDomains(body.allowedEmailDomains);
+        if (!domains) {
+          throw new HttpError(
+            400,
+            'Each allowed email domain must be a hostname such as example.com',
+          );
+        }
+        patch.allowedEmailDomains = domains;
+      }
+      const next = await setAuthSettings(patch);
       return { ...next, hasEmailProvider: ready, hasSsoProvider: sso };
     },
     {
@@ -201,13 +222,13 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
       }
 
       const body = emailBody(
-        "This test confirms that It's a Plan can send email through the configured provider.",
+        `This test confirms that ${APP_NAME} can send email through the configured provider.`,
       );
       const result = await sendEmail(
         { ...config, smtp: { ...config.smtp, timeout: config.smtp.timeout ?? 15 } },
         {
           to: current.email,
-          subject: "It's a Plan email test",
+          subject: `${APP_NAME} email test`,
           ...body,
         },
       );
@@ -254,7 +275,7 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
       }
       await assertUsableSignInMethod(
         enabled && clientId.length > 0 && hasClientSecret,
-        await hasConfiguredOidc(),
+        (await hasConfiguredOidc()) || (await hasConfiguredMicrosoft()),
       );
       const next = await setGoogleSettings(body);
       return { ...next, redirectUri: GOOGLE_REDIRECT_URI };
@@ -296,7 +317,7 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
       }
       await assertUsableSignInMethod(
         enabled && discoveryUrl.length > 0 && clientId.length > 0 && hasClientSecret,
-        await hasConfiguredGoogle(),
+        (await hasConfiguredGoogle()) || (await hasConfiguredMicrosoft()),
       );
       const next = await setOidcSettings(body);
       return { ...next, redirectUri: OIDC_REDIRECT_URI };
@@ -308,6 +329,47 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
         summary: 'Update OIDC sign-in settings',
         description:
           'Update the generic OIDC/OAuth2 credentials and whether the provider is offered.',
+      },
+    },
+  )
+
+  .get(
+    '/god/microsoft-settings',
+    async () => ({ ...(await getMicrosoftSettings()), redirectUri: MICROSOFT_REDIRECT_URI }),
+    {
+      response: { 200: MicrosoftSettingsResponse, ...errors(401, 403) },
+      detail: {
+        summary: 'Get Microsoft sign-in settings',
+        description: 'Get the Microsoft Entra credentials (the client secret redacted).',
+      },
+    },
+  )
+
+  .put(
+    '/god/microsoft-settings',
+    async ({ body }) => {
+      const current = await getMicrosoftSettings();
+      const enabled = body.enabled ?? current.enabled;
+      const tenantId = body.tenantId ?? current.tenantId;
+      const clientId = body.clientId ?? current.clientId;
+      const hasClientSecret = (body.clientSecret?.length ?? 0) > 0 || current.hasClientSecret;
+      if (enabled && (tenantId.length === 0 || clientId.length === 0 || !hasClientSecret)) {
+        throw new HttpError(400, 'Add the tenant ID, client ID and secret first');
+      }
+      await assertUsableSignInMethod(
+        enabled && tenantId.length > 0 && clientId.length > 0 && hasClientSecret,
+        (await hasConfiguredGoogle()) || (await hasConfiguredOidc()),
+      );
+      const next = await setMicrosoftSettings(body);
+      return { ...next, redirectUri: MICROSOFT_REDIRECT_URI };
+    },
+    {
+      body: MicrosoftSettingsBody,
+      response: { 200: MicrosoftSettingsResponse, ...errors(400, 401, 403) },
+      detail: {
+        summary: 'Update Microsoft sign-in settings',
+        description:
+          'Update the Microsoft Entra credentials and whether Microsoft sign-in is offered.',
       },
     },
   )

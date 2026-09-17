@@ -24,6 +24,7 @@ import {
   sendMagicLink,
   signInWithPassword,
   signInWithGoogle,
+  signInWithMicrosoft,
   signInWithOidc,
   signInWithPasskey,
 } from '../../services/auth.service';
@@ -190,6 +191,7 @@ export default function AuthLoginForm() {
           onToggleMethod={() => switchTo(signingInWithLink ? 'password' : 'link')}
           onOidc={() => run(signInWithOidc, { redirect: false })}
           onGoogle={() => run(signInWithGoogle, { redirect: false })}
+          onMicrosoft={() => run(signInWithMicrosoft, { redirect: false })}
           onPasskey={() => run(signInWithPasskey, { fallback: t('errors.passkey') })}
         />
 

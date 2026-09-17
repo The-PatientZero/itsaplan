@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import GoogleIcon from '@/components/common/GoogleIcon';
+import MicrosoftIcon from '@/components/common/MicrosoftIcon';
 import { useAuthConfig } from '@/services/authConfig.service';
 
 // Signing in through a provider covers sign-up too: an address without an account
@@ -13,10 +14,12 @@ export default function AuthRegisterProviders({
   pending,
   onOidc,
   onGoogle,
+  onMicrosoft,
 }: {
   pending: boolean;
   onOidc: () => void;
   onGoogle: () => void;
+  onMicrosoft: () => void;
 }) {
   const t = useTranslations('auth.register');
   const authConfig = useAuthConfig();
@@ -35,6 +38,12 @@ export default function AuthRegisterProviders({
         <Button type="button" variant="outline" onClick={onGoogle} disabled={pending}>
           <GoogleIcon className="size-4" />
           {t('withGoogle')}
+        </Button>
+      )}
+      {authConfig?.microsoft && (
+        <Button type="button" variant="outline" onClick={onMicrosoft} disabled={pending}>
+          <MicrosoftIcon className="size-4" />
+          {t('withMicrosoft')}
         </Button>
       )}
     </Field>

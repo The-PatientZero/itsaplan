@@ -2,6 +2,7 @@
   "providers": {
     "credential": "Mot de passe",
     "google": "Google",
+    "microsoft": "Microsoft",
     "passkey": "Clé d'accès"
   },
   "users": {
@@ -165,6 +166,8 @@
     "saved": "Paramètres d'authentification enregistrés",
     "registration": "Inscription",
     "registrationHint": "Qui peut créer un compte sur cette instance.",
+    "allowedDomains": "Domaines d'e-mail autorisés",
+    "allowedDomainsHint": "Un domaine par ligne, par exemple example.com. Dès qu'un domaine est listé, un compte n'est créé que pour une adresse de l'un d'eux, quelle que soit la méthode de connexion. Laissez vide pour autoriser tous les domaines.",
     "modes": {
       "open": {
         "label": "Ouverte",
@@ -268,7 +271,13 @@
     "oidcLabelHint": "Nomme votre fournisseur sur le bouton de connexion. Laissez vide pour un libellé générique.",
     "scopes": "Scopes",
     "scopesHint": "Séparés par des espaces. openid est obligatoire ; profile et email renseignent le nom et l'adresse.",
-    "oidcRedirectUriHint": "Enregistrez-la comme URI de redirection sur le client de votre fournisseur d'identité. Le fournisseur refuse la connexion si elle ne correspond pas exactement."
+    "oidcRedirectUriHint": "Enregistrez-la comme URI de redirection sur le client de votre fournisseur d'identité. Le fournisseur refuse la connexion si elle ne correspond pas exactement.",
+    "microsoft": "Microsoft 365",
+    "microsoftConfigured": "Une adresse sans compte en obtient un ; une adresse qui a déjà un compte confirmé s'y connecte.",
+    "microsoftMissing": "Ajoutez d'abord l'identifiant de locataire, l'identifiant et le secret client.",
+    "tenantId": "Identifiant de locataire",
+    "tenantIdHint": "L'identifiant de répertoire (locataire) de l'inscription d'application dans Microsoft Entra. Seuls les comptes de ce locataire peuvent se connecter.",
+    "microsoftRedirectUriHint": "Enregistrez ceci comme URI de redirection Web sur l'inscription d'application dans Microsoft Entra. Microsoft refuse la connexion s'il ne correspond pas exactement."
   },
   "scim": {
     "saved": "Paramètres SCIM enregistrés",

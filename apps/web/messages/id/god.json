@@ -2,6 +2,7 @@
   "providers": {
     "credential": "Kata sandi",
     "google": "Google",
+    "microsoft": "Microsoft",
     "passkey": "Passkey"
   },
   "users": {
@@ -165,6 +166,8 @@
     "saved": "Pengaturan autentikasi disimpan",
     "registration": "Pendaftaran",
     "registrationHint": "Siapa yang boleh membuat akun di instance ini.",
+    "allowedDomains": "Domain email yang diizinkan",
+    "allowedDomainsHint": "Satu domain per baris, misalnya example.com. Jika ada yang tercantum, akun hanya dibuat untuk alamat di salah satu domain itu, apa pun metode masuknya. Kosongkan untuk mengizinkan semua domain.",
     "modes": {
       "open": {
         "label": "Terbuka",
@@ -268,7 +271,13 @@
     "oidcLabelHint": "Menamai penyedia Anda pada tombol masuk. Biarkan kosong untuk label umum.",
     "scopes": "Cakupan (Scopes)",
     "scopesHint": "Dipisahkan oleh spasi. openid wajib diisi; profile dan email mengisi nama dan alamat.",
-    "oidcRedirectUriHint": "Daftarkan ini sebagai URI pengalihan pada klien di penyedia identitas Anda. Penyedia akan menolak proses masuk jika tidak cocok persis."
+    "oidcRedirectUriHint": "Daftarkan ini sebagai URI pengalihan pada klien di penyedia identitas Anda. Penyedia akan menolak proses masuk jika tidak cocok persis.",
+    "microsoft": "Microsoft 365",
+    "microsoftConfigured": "Alamat tanpa akun akan dibuatkan akun; alamat yang sudah memiliki akun terkonfirmasi akan masuk ke akun tersebut.",
+    "microsoftMissing": "Tambahkan tenant ID, client ID, dan client secret terlebih dahulu.",
+    "tenantId": "Tenant ID",
+    "tenantIdHint": "ID direktori (tenant) dari pendaftaran aplikasi di Microsoft Entra. Hanya akun tenant tersebut yang dapat masuk.",
+    "microsoftRedirectUriHint": "Daftarkan ini sebagai URI pengalihan Web pada pendaftaran aplikasi di Microsoft Entra. Microsoft menolak proses masuk jika tidak sama persis."
   },
   "scim": {
     "saved": "Pengaturan SCIM disimpan",

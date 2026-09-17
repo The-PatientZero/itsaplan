@@ -15,9 +15,19 @@ export interface GodPolicyForm {
   setEmailPassword: (v: boolean) => void;
   trustProviderEmails: boolean;
   setTrustProviderEmails: (v: boolean) => void;
+  // One domain per line in the field, an array over the wire.
+  allowedEmailDomains: string;
+  setAllowedEmailDomains: (v: string) => void;
   dirty: boolean;
   saving: boolean;
   save: () => Promise<void>;
+}
+
+function parseDomains(value: string): string[] {
+  return value
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
 }
 
 // Held in local state rather than saved on change, so the whole page commits through
@@ -32,13 +42,17 @@ export function useGodPolicyForm(settings: InstanceAuthSettings): GodPolicyForm 
   const [magicLink, setMagicLink] = useState(settings.magicLink);
   const [emailPassword, setEmailPassword] = useState(settings.emailPassword);
   const [trustProviderEmails, setTrustProviderEmails] = useState(settings.trustProviderEmails);
+  const [allowedEmailDomains, setAllowedEmailDomains] = useState(
+    settings.allowedEmailDomains.join('\n'),
+  );
 
   const dirty =
     registration !== settings.registration ||
     requireEmailVerification !== settings.requireEmailVerification ||
     magicLink !== settings.magicLink ||
     emailPassword !== settings.emailPassword ||
-    trustProviderEmails !== settings.trustProviderEmails;
+    trustProviderEmails !== settings.trustProviderEmails ||
+    parseDomains(allowedEmailDomains).join('\n') !== settings.allowedEmailDomains.join('\n');
 
   async function save() {
     await update.mutateAsync({
@@ -47,6 +61,7 @@ export function useGodPolicyForm(settings: InstanceAuthSettings): GodPolicyForm 
       magicLink,
       emailPassword,
       trustProviderEmails,
+      allowedEmailDomains: parseDomains(allowedEmailDomains),
     });
   }
 
@@ -61,6 +76,8 @@ export function useGodPolicyForm(settings: InstanceAuthSettings): GodPolicyForm 
     setEmailPassword,
     trustProviderEmails,
     setTrustProviderEmails,
+    allowedEmailDomains,
+    setAllowedEmailDomains,
     dirty,
     saving: update.isPending,
     save,

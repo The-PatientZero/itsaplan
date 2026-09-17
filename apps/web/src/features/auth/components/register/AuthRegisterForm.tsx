@@ -15,7 +15,12 @@ import AuthFormHeader from '../AuthFormHeader';
 import AuthMessagePanel from '../AuthMessagePanel';
 import AuthRegisterPasswordFields from './AuthRegisterPasswordFields';
 import AuthRegisterProviders from './AuthRegisterProviders';
-import { signInWithGoogle, signInWithOidc, signUpWithEmail } from '../../services/auth.service';
+import {
+  signInWithGoogle,
+  signInWithMicrosoft,
+  signInWithOidc,
+  signUpWithEmail,
+} from '../../services/auth.service';
 import { useAuthAction } from '../../hooks/useAuthAction';
 import { useAuthConfig } from '@/services/authConfig.service';
 
@@ -32,7 +37,9 @@ export default function AuthRegisterForm() {
   // With the password form off, the identity provider is what creates the account,
   // so this screen keeps only the buttons that start that round trip.
   const passwordEnabled = authConfig?.emailPassword !== false;
-  const hasProvider = authConfig?.oidc === true || authConfig?.google === true;
+  const hasProvider =
+    authConfig?.oidc === true || authConfig?.google === true || authConfig?.microsoft === true;
+  const allowedDomains = authConfig?.allowedEmailDomains ?? [];
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -91,6 +98,9 @@ export default function AuthRegisterForm() {
   function subtitle() {
     if (!passwordEnabled) return t('register.subtitleSso');
     if (inviteOnly) return t('register.subtitleInviteOnly');
+    if (allowedDomains.length > 0) {
+      return t('register.subtitleDomains', { domains: allowedDomains.join(', ') });
+    }
     return t('register.subtitle');
   }
 
@@ -128,6 +138,7 @@ export default function AuthRegisterForm() {
               pending={pending}
               onOidc={() => run(signInWithOidc, { redirect: false })}
               onGoogle={() => run(signInWithGoogle, { redirect: false })}
+              onMicrosoft={() => run(signInWithMicrosoft, { redirect: false })}
             />
           </>
         )}

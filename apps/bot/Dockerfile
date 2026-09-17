@@ -33,6 +33,11 @@ ENV NODE_ENV=production
 COPY --from=install /app ./
 COPY . .
 
+# Runs as a non-root user on a filesystem that may be read-only; /tmp is the only path
+# it writes. The transpiler cache would write under $HOME, so it is off.
+ENV BUN_RUNTIME_TRANSPILER_CACHE_PATH=0
+USER bun
+
 # No migrations: the api owns them. The bot reads the instance bot token and writes
 # account links through @repo/db, so it needs the database to be reachable.
 CMD ["bun", "run", "apps/bot/src/index.ts"]

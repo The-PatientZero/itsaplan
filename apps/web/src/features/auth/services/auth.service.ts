@@ -131,6 +131,17 @@ export async function signInWithOidc(): Promise<void> {
   if (result.error) throw new Error(result.error.message ?? '');
 }
 
+// Starts the Microsoft 365 round trip, a second generic OAuth provider beside the
+// instance's own; the same shape as the call above.
+export async function signInWithMicrosoft(): Promise<void> {
+  const result = await signIn.oauth2({
+    providerId: 'microsoft',
+    callbackURL: appUrl('/'),
+    errorCallbackURL: appUrl('/login'),
+  });
+  if (result.error) throw new Error(result.error.message ?? '');
+}
+
 export async function signInWithPasskey(): Promise<void> {
   const result = await signIn.passkey();
   if (result?.error) throw new Error(result.error.message ?? '');

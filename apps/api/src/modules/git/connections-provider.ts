@@ -1,3 +1,4 @@
+import { APP_NAME } from '#shared/app';
 import { HttpError } from '#shared/lib';
 import { assertPublicHttpUrl, pinnedFetch } from '#shared/net';
 import { pipelineStatus } from './providers';
@@ -795,7 +796,7 @@ export async function installProviderWebhook(
     const response = await providerRequest(input, path, {
       method: existing ? 'PUT' : 'POST',
       body: JSON.stringify({
-        description: "It's a Plan",
+        description: APP_NAME,
         url: payloadUrl,
         active: true,
         secret,

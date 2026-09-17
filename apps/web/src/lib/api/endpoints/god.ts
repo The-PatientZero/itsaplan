@@ -22,9 +22,12 @@ export interface InstanceAuthSettings {
   magicLink: boolean;
   emailPassword: boolean;
   trustProviderEmails: boolean;
+  // Domains an address has to belong to before an account is created for it; empty
+  // admits every domain.
+  allowedEmailDomains: string[];
   hasEmailProvider: boolean;
-  // Whether Google or the OIDC provider can run. Password sign-in may only be turned
-  // off while one of them can.
+  // Whether Google, Microsoft or the OIDC provider can run. Password sign-in may only
+  // be turned off while one of them can.
   hasSsoProvider: boolean;
 }
 
@@ -34,6 +37,7 @@ export interface InstanceAuthSettingsPatch {
   magicLink?: boolean;
   emailPassword?: boolean;
   trustProviderEmails?: boolean;
+  allowedEmailDomains?: string[];
 }
 
 // The instance mail provider used for authentication email (password reset, address
@@ -112,6 +116,23 @@ export interface InstanceOidcSettingsPatch {
   clientSecret?: string;
   scopes?: string[];
   pkce?: boolean;
+}
+
+// Microsoft 365 sign-in against one Entra tenant. redirectUri is derived from the API
+// origin and has to be registered on the app registration.
+export interface InstanceMicrosoftSettings {
+  enabled: boolean;
+  tenantId: string;
+  clientId: string;
+  hasClientSecret: boolean;
+  redirectUri: string;
+}
+
+export interface InstanceMicrosoftSettingsPatch {
+  enabled?: boolean;
+  tenantId?: string;
+  clientId?: string;
+  clientSecret?: string;
 }
 
 // The instance Telegram bot: the one bot users link their accounts through, and the
@@ -291,6 +312,15 @@ export const getInstanceOidcSettings = () => request<InstanceOidcSettings>('/god
 
 export const updateInstanceOidcSettings = (patch: InstanceOidcSettingsPatch) =>
   request<InstanceOidcSettings>('/god/oidc-settings', {
+    method: 'PUT',
+    body: JSON.stringify(patch),
+  });
+
+export const getInstanceMicrosoftSettings = () =>
+  request<InstanceMicrosoftSettings>('/god/microsoft-settings');
+
+export const updateInstanceMicrosoftSettings = (patch: InstanceMicrosoftSettingsPatch) =>
+  request<InstanceMicrosoftSettings>('/god/microsoft-settings', {
     method: 'PUT',
     body: JSON.stringify(patch),
   });

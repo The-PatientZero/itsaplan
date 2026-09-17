@@ -2,6 +2,7 @@
   "providers": {
     "credential": "密码",
     "google": "Google",
+    "microsoft": "Microsoft",
     "passkey": "通行密钥"
   },
   "users": {
@@ -165,6 +166,8 @@
     "saved": "身份验证设置已保存",
     "registration": "注册",
     "registrationHint": "设置哪些人可以创建此实例的账户。",
+    "allowedDomains": "允许的邮箱域名",
+    "allowedDomainsHint": "每行一个域名，例如 example.com。列出域名后，无论使用哪种登录方式，只会为这些域名下的邮箱地址创建账户。留空则允许所有域名。",
     "modes": {
       "open": {
         "label": "开放注册",
@@ -268,7 +271,13 @@
     "oidcLabelHint": "在登录按钮上标明你的提供方。留空则使用通用文字。",
     "scopes": "权限范围",
     "scopesHint": "以空格分隔。openid 为必需；profile 和 email 用于填充姓名和邮箱。",
-    "oidcRedirectUriHint": "将此地址注册为身份提供方客户端的重定向 URI。不完全一致时提供方会拒绝登录。"
+    "oidcRedirectUriHint": "将此地址注册为身份提供方客户端的重定向 URI。不完全一致时提供方会拒绝登录。",
+    "microsoft": "Microsoft 365",
+    "microsoftConfigured": "邮箱没有对应账户时会创建账户；已有已验证账户时会直接登录。",
+    "microsoftMissing": "请先填写租户 ID、客户端 ID 和客户端密钥。",
+    "tenantId": "租户 ID",
+    "tenantIdHint": "Microsoft Entra 中应用注册的目录（租户）ID。只有该租户的账户可以登录。",
+    "microsoftRedirectUriHint": "在 Microsoft Entra 的应用注册中将其登记为 Web 重定向 URI。若不完全一致，Microsoft 会拒绝登录。"
   },
   "scim": {
     "saved": "SCIM 设置已保存",

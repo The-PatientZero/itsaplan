@@ -278,6 +278,13 @@ tidy first so review sees the final shape; a review before tidy goes stale when
 tidy moves the code. This is separate from the CI gate (`format:check` + `lint` +
 `typecheck`), which still must pass.
 
+## Planning
+
+`docs/planning/` follows the Forge workflow. Before non-trivial work read
+`docs/planning/CONTEXT.md` (glossary, Project Status, open questions) and
+`docs/planning/WORKFLOW.md` (the routing card). In a planning document the product entity
+is an **Issue**; **Work Item** is reserved for a `WI-NNNN` planning document.
+
 ## Gotchas
 
 - Don't add a build step for shared packages — they're consumed as source. The one

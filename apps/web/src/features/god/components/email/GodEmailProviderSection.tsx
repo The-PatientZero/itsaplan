@@ -15,6 +15,7 @@ import EnabledSwitch from '@/components/common/inputs/EnabledSwitch';
 import ProviderToggle from '@/components/common/inputs/ProviderToggle';
 import SecretInput from '@/components/common/inputs/SecretInput';
 import type { GodEmailForm } from '../../hooks/useGodEmailForm';
+import { APP_NAME } from '@/utils/app';
 import GodEmailTestButton from './GodEmailTestButton';
 
 const ENCRYPTION_OPTIONS: NotificationEncryption[] = ['none', 'ssl', 'tls'];
@@ -40,7 +41,7 @@ export default function GodEmailProviderSection({ form }: { form: GodEmailForm }
             id="email-from"
             value={form.from}
             onChange={(e) => form.setFrom(e.target.value)}
-            placeholder={"It's a Plan <noreply@example.com>"}
+            placeholder={`${APP_NAME} <noreply@example.com>`}
           />
           <p className="text-xs text-muted-foreground">{t('fromHint')}</p>
         </div>

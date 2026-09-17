@@ -7,9 +7,11 @@ import {
   getAuthSettings,
   hasConfiguredGoogle,
   hasConfiguredOidc,
+  hasConfiguredMicrosoft,
   getOidcLabel,
 } from '@repo/auth';
-import { hasConfiguredEmailProvider } from '@repo/db';
+import { db, hasConfiguredEmailProvider } from '@repo/db';
+import { sql } from 'drizzle-orm';
 import { cors } from '@elysiajs/cors';
 import { swagger } from '@elysiajs/swagger';
 import { Elysia } from 'elysia';
@@ -20,6 +22,7 @@ import { gitWebhookRoutes } from './modules/git/webhook';
 import { scimRoutes } from './modules/scim';
 import { syncOidcGroupsAfterCallback } from './modules/scim/oidc-sync';
 import { normalizeOpenApiResponse } from './openapi';
+import { APP_NAME } from '#shared/app';
 import pkg from '../../../package.json';
 
 const apiUrl = (process.env.API_URL ?? 'http://localhost:3000').replace(/\/+$/, '');
@@ -75,7 +78,7 @@ export const app = new Elysia()
       },
       documentation: {
         info: {
-          title: "It's a Plan API",
+          title: `${APP_NAME} API`,
           version: pkg.version,
           description: apiDescription,
         },
@@ -283,6 +286,10 @@ export const app = new Elysia()
         // Names the operator's own identity provider, so the button shows it as
         // given. Empty falls back to a translated default.
         oidcLabel: await getOidcLabel(),
+        microsoft: await hasConfiguredMicrosoft(),
+        // Named on the sign-up screen, so a visitor learns which addresses work
+        // before trying one.
+        allowedEmailDomains: settings.allowedEmailDomains,
       };
     },
     {
@@ -296,13 +303,40 @@ export const app = new Elysia()
     },
   )
   // Root doubles as the liveness/health endpoint.
-  .get('/', () => ({ name: "It's a Plan api", status: 'ok' }), {
+  .get('/', () => ({ name: `${APP_NAME} api`, status: 'ok' }), {
     detail: {
       tags: ['System'],
       summary: 'Check that the api is up',
       description: 'Liveness probe: returns the api name and `status: "ok"`.',
     },
   })
+  .get('/health/live', () => ({ status: 'ok' }), {
+    detail: {
+      tags: ['System'],
+      summary: 'Check that the process is up',
+      description: 'Liveness probe: answers 200 as soon as the server accepts requests.',
+    },
+  })
+  .get(
+    '/health/ready',
+    async ({ set }) => {
+      try {
+        await db.execute(sql`select 1`);
+        return { status: 'ok' };
+      } catch (error) {
+        console.error('[health] database not reachable:', error);
+        set.status = 503;
+        return { status: 'unavailable' };
+      }
+    },
+    {
+      detail: {
+        tags: ['System'],
+        summary: 'Check that the api can reach its database',
+        description: 'Readiness probe: answers 200 while the database answers, 503 otherwise.',
+      },
+    },
+  )
   // Inbound repository webhook receiver (authenticated by its per-project secret).
   .use(gitWebhookRoutes)
   // SCIM 2.0 provisioning (authenticated by the instance SCIM bearer token). Mounted

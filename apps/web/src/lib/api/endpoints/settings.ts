@@ -81,6 +81,10 @@ export interface PublicAuthConfig {
   // The sign-in button text the operator gave their identity provider. Empty when
   // OIDC is not offered, or when they left it blank.
   oidcLabel: string;
+  microsoft: boolean;
+  // Domains an address has to belong to before an account is created for it; empty
+  // admits every domain.
+  allowedEmailDomains: string[];
 }
 
 // Project settings: MCP reachability and the enabled sections. Owner-only; the

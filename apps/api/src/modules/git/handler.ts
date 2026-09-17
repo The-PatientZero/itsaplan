@@ -20,6 +20,7 @@ import {
 import type { GitEvent, GitProviderKey, PullRequestEvent } from './providers';
 import { columnStateTypes, firstCompletedColumnId, type GitSettings } from './service';
 import { postPullRequestLinkback } from './connections-service';
+import { APP_NAME } from '#shared/app';
 
 // Stores normalized repository events and applies pull request automation:
 // - a pull request merged into the repository's default branch moves the issues
@@ -142,7 +143,7 @@ export async function handleGitEvent(
         providerKey,
         event.repo,
         event.number,
-        `Linked to ${items.length === 1 ? 'an issue' : 'issues'} in It's a Plan:\n\n${items.join('\n')}`,
+        `Linked to ${items.length === 1 ? 'an issue' : 'issues'} in ${APP_NAME}:\n\n${items.join('\n')}`,
       );
     } catch {
       // Development linking is the primary action. A revoked provider token must
